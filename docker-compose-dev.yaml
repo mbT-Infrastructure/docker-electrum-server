@@ -1,0 +1,13 @@
+services:
+
+    electrum-server:
+        container_name: electrum-server
+        build: .
+        environment:
+            - ELECTRS_DAEMON_RPC_ADDR=$HOST_IP:8332
+            - ELECTRS_DAEMON_P2P_ADDR=$HOST_IP:8333
+        volumes:
+            - "./data-local/bitcoin:/media/bitcoin"
+            - "./data-local/electrum-server:/media/electrum-server"
+        ports:
+            - "127.0.0.1:50001:50001"
