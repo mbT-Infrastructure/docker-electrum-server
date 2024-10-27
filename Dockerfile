@@ -1,9 +1,22 @@
-FROM madebytimo/scripts AS builder
+FROM --platform=$BUILDPLATFORM madebytimo/builder AS builder
+
+ARG TARGETPLATFORM
 
 WORKDIR /root/builder
 
-RUN apt update -qq && apt install -y -qq cargo clang \
+ENV TARGET_ARCHITECTURE="${TARGETPLATFORM#*/}"
+ENV TARGET_ARCHITECTURE_ALT="${TARGET_ARCHITECTURE/arm64/aarch64}"
+ENV TARGET_ARCHITECTURE_ALT="${TARGET_ARCHITECTURE_ALT/amd64/x86_64}"
+
+RUN dpkg --add-architecture "$TARGET_ARCHITECTURE" \
+    && apt update -qq && bash -c 'apt install -y -qq cargo clang \
+        "gcc-${TARGET_ARCHITECTURE_ALT/_/-}-linux-gnu" \
+        "g++-${TARGET_ARCHITECTURE_ALT/_/-}-linux-gnu" "libc6-dev:${TARGET_ARCHITECTURE}" \
+        "librocksdb-dev:${TARGET_ARCHITECTURE}" "libstd-rust-dev:${TARGET_ARCHITECTURE}"' \
     && rm -rf /var/lib/apt/lists/*
+
+ENV BINDGEN_EXTRA_CLANG_ARGS="-target gcc-${TARGET_ARCHITECTURE_ALT}-linux-gnu"
+ENV RUSTFLAGS="-C linker=${TARGET_ARCHITECTURE_ALT}-linux-gnu-gcc"
 
 RUN download.sh --name electrs.tar.gz \
     https://github.com/romanz/electrs/archive/refs/heads/master.tar.gz \
@@ -11,10 +24,9 @@ RUN download.sh --name electrs.tar.gz \
     && rm electrs.tar.gz \
     && mv electrs-* electrs-source \
     && cd electrs-source \
-    && cargo build --locked --release \
+    && cargo build --locked --release --target "${TARGET_ARCHITECTURE_ALT}-unknown-linux-gnu" \
     && cd - \
-    && ls -la --si electrs-source/target/release \
-    && mv electrs-source/target/release/electrs . \
+    && mv "electrs-source/target/${TARGET_ARCHITECTURE_ALT}-unknown-linux-gnu/release/electrs" . \
     && rm -r electrs-source
 
 FROM madebytimo/base
