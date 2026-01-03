@@ -9,7 +9,7 @@ ENV TARGET_ARCHITECTURE_ALT="${TARGET_ARCHITECTURE/arm64/aarch64}"
 ENV TARGET_ARCHITECTURE_ALT="${TARGET_ARCHITECTURE_ALT/amd64/x86_64}"
 
 RUN dpkg --add-architecture "$TARGET_ARCHITECTURE" \
-    && apt update -qq && bash -c 'apt install -y -qq cargo clang \
+    && apt update -qq && bash -c 'apt install -y -qq cargo \
         "gcc-${TARGET_ARCHITECTURE_ALT/_/-}-linux-gnu" \
         "g++-${TARGET_ARCHITECTURE_ALT/_/-}-linux-gnu" "libc6-dev:${TARGET_ARCHITECTURE}" \
         "librocksdb-dev:${TARGET_ARCHITECTURE}" "libstd-rust-dev:${TARGET_ARCHITECTURE}"' \
